@@ -377,10 +377,6 @@ std::string runTUI(Config& cfg)
             cfg.cloudModel = cloudModel;
             cfg.workDir = workDir;
             cfg.yoloMode = yoloMode;
-            // Load selected profile if in API mode
-            if (mode == 1 && profileIndex >= 0 && profileIndex < (int)cfg.profileNames.size())
-                api = cfg.profiles[cfg.profileNames[profileIndex]];
-
             cfg.api = api;
             saveConfig(cfg);
 
