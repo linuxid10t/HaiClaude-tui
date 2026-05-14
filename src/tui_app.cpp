@@ -102,8 +102,9 @@ static Component ProfileLoadingWrapper(Component child,
              const std::map<std::string, ProfileSettings>* p,
              ProfileSettings* a,
              int* idx)
-            : ComponentBase{}, child_{std::move(c)}, names_(n), profiles_(p),
-              api_(a), profileIdx_(idx) {}
+            : names_(n), profiles_(p), api_(a), profileIdx_(idx) {
+            Add(std::move(c));
+        }
 
         Element OnRender() override {
             if (names_ && profiles_ && api_ && profileIdx_) {
@@ -113,17 +114,10 @@ static Component ProfileLoadingWrapper(Component child,
                         *api_ = it->second;
                 }
             }
-            return child_->Render();
-        }
-        bool OnEvent(Event event) override {
-            return ActiveChild() ? ActiveChild()->OnEvent(std::move(event)) : false;
-        }
-        bool Focusable() const override {
-            return children_.empty() || !children_[0]->Focusable();
+            return ActiveChild() ? ActiveChild()->Render() : text("");
         }
 
     private:
-        Component child_;
         const std::vector<std::string>* names_ = nullptr;
         const std::map<std::string, ProfileSettings>* profiles_ = nullptr;
         ProfileSettings* api_ = nullptr;
