@@ -108,10 +108,14 @@ static Component ProfileLoadingWrapper(Component child,
 
         Element OnRender() override {
             if (names_ && profiles_ && api_ && profileIdx_) {
-                if (*profileIdx_ >= 0 && *profileIdx_ < (int)names_->size()) {
-                    auto it = profiles_->find((*names_)[*profileIdx_]);
-                    if (it != profiles_->end())
-                        *api_ = it->second;
+                int cur = *profileIdx_;
+                if (cur != lastIdx_) {
+                    if (cur >= 0 && cur < (int)names_->size()) {
+                        auto it = profiles_->find((*names_)[cur]);
+                        if (it != profiles_->end())
+                            *api_ = it->second;
+                    }
+                    lastIdx_ = cur;
                 }
             }
             return ActiveChild() ? ActiveChild()->Render() : text("");
@@ -122,6 +126,7 @@ static Component ProfileLoadingWrapper(Component child,
         const std::map<std::string, ProfileSettings>* profiles_ = nullptr;
         ProfileSettings* api_ = nullptr;
         int* profileIdx_ = nullptr;
+        int lastIdx_ = -1;
     };
     return std::make_shared<Impl>(std::move(child), names, profiles, api, profileIndex);
 }
