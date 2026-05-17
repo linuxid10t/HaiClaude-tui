@@ -40,5 +40,7 @@ Both are downloaded automatically by CMake on first build.
 - `Maybe(component, condition)` for conditional visibility
 - `CatchEvent` via `|=` attaches handlers to a component, but note that `|=` creates a **new** wrapper component — if the original was already added to a container, the handler won't be in the event chain. Apply `|=` **before** adding the component to containers
 - Container::Horizontal children that are non-focusable `Renderer` labels receive initial focus at index 0 but can't display a cursor — avoid putting non-focusable children in horizontal containers, or the cursor becomes invisible
-- `yframe` + `vscroll_indicator` for scrollable menus with more items than the visible area
+- `yframe` + `vscroll_indicator` for scrollable menus with more items than the visible area; also used on the main UI content so the layout scrolls instead of clipping on short terminals
 - `ProfileLoadingWrapper(component, names, profiles, api, profileIndex)` — custom wrapper component that loads the selected profile into the working `api` variable during `OnRender()`. Required because `apiSection` renders before `profileSection` in the main container tree; without it the inputs would read stale values. The wrapper must be placed inline in the tree where it needs to run, not as a separate hook.
+- Nested `Modal` decorators for layered popups: `Modal(innerModal, &showInner)(Modal(outerContent, &showOuter)(mainContainer))`. The outermost CatchEvent runs first, so key handlers for the inner modal (e.g. Esc to close popup) must be checked before the outer modal's handlers.
+- `dbox` (deck box) overlays one element on top of another — used to render the "new directory" popup on top of the browser modal window.

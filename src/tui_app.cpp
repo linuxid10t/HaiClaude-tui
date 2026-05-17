@@ -18,7 +18,7 @@ using namespace ftxui;
 // Directory browser component
 // ---------------------------------------------------------------------------
 
-static Component DirBrowser(std::string* path)
+static Component DirBrowser(std::string* path, std::function<void()>& outRefresh)
 {
     auto entries = std::make_shared<std::vector<std::string>>();
     auto selected = std::make_shared<int>(0);
@@ -37,6 +37,7 @@ static Component DirBrowser(std::string* path)
     };
 
     refresh();
+    outRefresh = refresh;
 
     auto menu = Menu(entries.get(), selected.get());
     menu |= CatchEvent([path, entries, selected, refresh](Event e) {
@@ -161,7 +162,26 @@ std::string runTUI(Config& cfg)
     // Directory browser state
     bool showBrowser = false;
     std::string browserPath = workDir;
-    auto browserComponent = DirBrowser(&browserPath);
+    std::string newDirName;
+    bool showNewDir = false;
+    std::function<void()> browserRefresh;
+    auto browserComponent = DirBrowser(&browserPath, browserRefresh);
+
+    auto newDirInput = Input(&newDirName, "new dir name");
+    newDirInput |= CatchEvent([&](Event e) {
+        if (e == Event::Return) {
+            if (!newDirName.empty()) {
+                try {
+                    fs::create_directories(fs::path(browserPath) / newDirName);
+                    browserRefresh();
+                } catch (...) {}
+            }
+            newDirName.clear();
+            showNewDir = false;
+            return true;
+        }
+        return false;
+    });
 
     // Result
     std::string resultCommand;
@@ -399,12 +419,21 @@ std::string runTUI(Config& cfg)
     auto mainContainer = Container::Vertical(mainComponents);
 
     // --- Modal for directory browser ---
-    auto modalDecorator = Modal(browserComponent, &showBrowser);
-    auto root = modalDecorator(mainContainer);
+    auto browserModalDecorator = Modal(browserComponent, &showBrowser);
+    auto newDirModalDecorator = Modal(newDirInput, &showNewDir);
+    auto root = newDirModalDecorator(browserModalDecorator(mainContainer));
 
     // Handle keyboard for browser modal
     root |= CatchEvent([&](Event e) {
         if (!showBrowser) return false;
+        if (showNewDir) {
+            if (e == Event::Escape) {
+                newDirName.clear();
+                showNewDir = false;
+                return true;
+            }
+            return false;
+        }
         if (e == Event::Escape) {
             showBrowser = false;
             return true;
@@ -412,6 +441,11 @@ std::string runTUI(Config& cfg)
         if (e == Event::Tab) {
             workDir = browserPath;
             showBrowser = false;
+            return true;
+        }
+        if (e == Event::Character('n')) {
+            newDirName.clear();
+            showNewDir = true;
             return true;
         }
         return false;
@@ -422,18 +456,30 @@ std::string runTUI(Config& cfg)
         auto content = root->Render();
 
         if (showBrowser) {
-            return window(text(" Browse Directory ") | bold,
+            auto browserWindow = window(text(" Browse Directory ") | bold,
                 vbox({
                     text("Current: " + browserPath) | dim,
                     separator(),
                     browserComponent->Render() | flex | vscroll_indicator | yframe | size(HEIGHT, LESS_THAN, 20),
                     separator(),
-                    text("Enter: open dir  |  Tab: accept  |  Esc: cancel") | dim | center,
+                    text("Enter: open | Tab: accept | n: new dir | Esc: cancel") | dim | center,
                 })) | size(WIDTH, EQUAL, 60) | size(HEIGHT, LESS_THAN, 30) | center;
+
+            if (showNewDir) {
+                auto popup = window(text(" New Directory ") | bold,
+                    vbox({
+                        hbox({text("Name: ") | bold, newDirInput->Render() | flex}),
+                        separator(),
+                        text("Enter: create  |  Esc: cancel") | dim | center,
+                    })) | size(WIDTH, EQUAL, 40) | center;
+                return dbox({browserWindow, popup});
+            }
+
+            return browserWindow;
         }
 
         return vbox({
-            content | flex,
+            content | vscroll_indicator | yframe | flex,
         }) | border | size(WIDTH, EQUAL, 72);
     });
 

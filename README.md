@@ -10,7 +10,7 @@ Provides a full-screen interactive menu to configure and launch Claude Code — 
 - **API mode** — point at any Anthropic-compatible endpoint with a custom API key
 - **Profile management** — save and switch between named API configurations
 - **Model overrides** — set custom model names for each tier (Opus / Sonnet / Haiku)
-- **Directory browser** — pick a working directory with an in-app file browser
+- **Directory browser** — pick a working directory with an in-app file browser; press `n` to create a new directory
 - **YOLO mode** — skip all permission prompts (`--dangerously-skip-permissions`)
 - **Attribution header fix** — option to disable the `x-attribution-header` for local LLMs
 - **Persistent config** — settings saved to `~/.config/haiclaude-tui/config.json`
